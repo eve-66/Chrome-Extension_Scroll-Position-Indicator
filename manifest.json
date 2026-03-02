@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Scroll Position Indicator",
+    "version": "1.0.0",
+    "description": "A simple extension that shows the scroll position as a percentage.",
+    "permissions": [
+        "activeTab",
+        "scripting"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_title": "Scroll Position Indicator On/Off"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.js"],
+            "run_at": "document_idle"
+        }
+    ]
+}

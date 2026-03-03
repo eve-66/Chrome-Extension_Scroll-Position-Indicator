@@ -54,37 +54,78 @@
   function attachDragHandlers() {
     if (!indicator) return;
 
+    const THRESHOLD_PX = 6;
+
+    let pointerId = null;
+    let downX = 0;
+    let downY = 0;
+    let dragStarted = false;
+
     indicator.addEventListener("pointerdown", (e) => {
+      // left-click / primary touch only
       if (e.button !== 0) return;
+
+      pointerId = e.pointerId;
+      indicator.setPointerCapture(pointerId);
+
+      downX = e.clientX;
+      downY = e.clientY;
+      dragStarted = false;
+
       dragging = true;
-      indicator.setPointerCapture(e.pointerId);
 
       const rect = indicator.getBoundingClientRect();
-      dragOffsetX = e.clientX - rect.left;
-      dragOffsetY = e.clientY - rect.top;
+      dragOffsetX = downX - rect.left;
+      dragOffsetY = downY - rect.top;
 
-      indicator.style.cursor = "grabbing";
-      e.preventDefault();
+      indicator.style.cursor = "grab";
     });
 
     indicator.addEventListener("pointermove", (e) => {
-      if (!dragging || !indicator) return;
+      if (!dragging || !indicator || pointerId !== e.pointerId) return;
+
+      const dx = e.clientX - downX;
+      const dy = e.clientY - downY;
+
+      // Start drag only after the pointer has moved enough
+      if (!dragStarted) {
+        if (Math.hypot(dx, dy) < THRESHOLD_PX) return;
+        dragStarted = true;
+        indicator.style.cursor = "grabbing";
+        e.preventDefault();
+      }
+
       const nextLeft = e.clientX - dragOffsetX;
       const nextTop = e.clientY - dragOffsetY;
       applyPosition(nextLeft, nextTop);
     });
 
-    const endDrag = async () => {
-      if (!dragging || !indicator) return;
-      dragging = false;
-      indicator.style.cursor = "grab";
+    const endPointer = async (e) => {
+      if (!dragging || pointerId !== e.pointerId) return;
 
-      const rect = indicator.getBoundingClientRect();
-      await savePosition(rect.left, rect.top);
+      dragging = false;
+      pointerId = null;
+
+      if (!indicator) return;
+
+      if (dragStarted) {
+        // Drag finished -> persist position
+        indicator.style.cursor = "grab";
+        const rect = indicator.getBoundingClientRect();
+        await savePosition(rect.left, rect.top);
+      } else {
+        // Click (no drag) -> scroll to top smoothly in this tab
+        try {
+          window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+        } catch {
+          // Fallback for very old pages/environments
+          window.scrollTo(0, 0);
+        }
+      }
     };
 
-    indicator.addEventListener("pointerup", endDrag);
-    indicator.addEventListener("pointercancel", endDrag);
+    indicator.addEventListener("pointerup", endPointer);
+    indicator.addEventListener("pointercancel", endPointer);
   }
 
   async function createIndicator() {

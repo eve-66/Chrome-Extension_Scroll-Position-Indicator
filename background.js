@@ -1,3 +1,32 @@
+const POSITION_STORAGE_KEY = "indicatorPosition";
+
+// Chrome/拡張が終了するタイミングで呼ばれる（ベストエフォート。必ず呼ばれる保証はない）
+chrome.runtime.onSuspend.addListener(() => {
+  try {
+    chrome.storage.local.remove(POSITION_STORAGE_KEY);
+  } catch (e) {
+    // ignore
+  }
+});
+
+// 呼ばれないケースに備えて、起動時にもクリアしておく
+chrome.runtime.onStartup.addListener(async () => {
+  try {
+    await chrome.storage.local.remove(POSITION_STORAGE_KEY);
+  } catch (e) {
+    // ignore
+  }
+});
+
+// インストール/更新直後もクリーンにする
+chrome.runtime.onInstalled.addListener(async () => {
+  try {
+    await chrome.storage.local.remove(POSITION_STORAGE_KEY);
+  } catch (e) {
+    // ignore
+  }
+});
+
 let globalEnabled = true;
 
 function iconPathsForCurrentState() {

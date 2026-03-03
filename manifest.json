@@ -5,7 +5,8 @@
     "description": "A simple extension that shows the scroll position as a percentage.",
     "permissions": [
         "activeTab",
-        "scripting"
+        "scripting",
+        "storage"
     ],
     "icons": {
         "16": "icons/icon_active_16.png",

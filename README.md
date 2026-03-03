@@ -1,15 +1,13 @@
-# Scroll Position Indicator
-
-![Icon Active](./icons/icon_active_32.png) ![Icon Inactive](./icons/icon_inactive_32.png)
+# Scroll Position Indicator ![Icon Active](./icons/icon_active_32.png)
 
 ページのスクロール位置を **0〜100%** で表示する Chrome 拡張です。  
 ツールバーアイコンで表示の ON/OFF を切り替えられます。
 
 ## Indicator プレビュー
 
-| 0% | 100% |
-| --- | --- |
-| ![Indicator 0%](./docs/indicator-0.svg) | ![Indicator 100%](./docs/indicator-100.svg) |
+| 0% | 50% | 100% |
+| --- | --- | --- |
+| ![Indicator 0%](./docs/indicator-0.png) | ![Indicator 50%](./docs/indicator-50.png) | ![Indicator 100%](./docs/indicator-100.png) |
 
 ## 主な機能
 

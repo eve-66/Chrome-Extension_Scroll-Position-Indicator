@@ -10,8 +10,28 @@
 
   const STORAGE_KEY = "indicatorPosition"; // { left, top }
 
-  function clamp(n, min, max) {
-    return Math.min(max, Math.max(min, n));
+  // ===== Ring gauge (border progress) =====
+  const RING_COLOR = "#22c55e"; // gauge color (change if you like)
+  const INNER_BG = "rgba(0, 0, 0, 0.75)";
+
+  function setRingGauge(percent) {
+    if (!indicator) return;
+
+    const p = Math.min(100, Math.max(0, percent));
+    const deg = (p / 100) * 360;
+
+    // 0% -> same look as before (no colored border)
+    const conic =
+      p <= 0
+        ? "conic-gradient(from 0deg, rgba(0,0,0,0) 0deg 360deg)"
+        : `conic-gradient(from 0deg, ${RING_COLOR} 0deg ${deg}deg, rgba(0,0,0,0) ${deg}deg 360deg)`;
+
+    // Two-layer background: inner solid + outer conic ring
+    indicator.style.border = "2px solid transparent";
+    indicator.style.backgroundImage = `linear-gradient(${INNER_BG}, ${INNER_BG}), ${conic}`;
+    indicator.style.backgroundClip = "padding-box, border-box";
+    indicator.style.backgroundOrigin = "border-box";
+    indicator.style.backgroundRepeat = "no-repeat";
   }
 
   async function loadPosition() {
@@ -142,7 +162,8 @@
     indicator.style.zIndex = "2147483647";
     indicator.style.padding = "8px 12px";
     indicator.style.borderRadius = "10px";
-    indicator.style.background = "rgba(0, 0, 0, 0.75)";
+    // Background is managed by setRingGauge() so we can draw a progress ring on the border
+    setRingGauge(0);
     indicator.style.color = "#fff";
     indicator.style.fontSize = "14px";
     indicator.style.fontWeight = "600";
@@ -157,6 +178,7 @@
 
     indicator.textContent = "0%";
     document.documentElement.appendChild(indicator);
+    setRingGauge(0);
 
     // Apply saved position if present, else default to top-right-ish.
     const saved = await loadPosition();
@@ -181,6 +203,10 @@
     dragging = false;
   }
 
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
   function getScrollPercent() {
     const doc = document.documentElement;
     const scrollTop = window.scrollY || doc.scrollTop || 0;
@@ -193,7 +219,9 @@
 
   function updateIndicator() {
     if (!enabled || !indicator) return;
-    indicator.textContent = `${getScrollPercent()}%`;
+    const p = getScrollPercent();
+    indicator.textContent = `${p}%`;
+    setRingGauge(p);
   }
 
   function onScrollOrResize() {

@@ -75,11 +75,38 @@
     if (!indicator) return;
 
     const THRESHOLD_PX = 6;
+    const DOUBLE_CLICK_MS = 200;
 
     let pointerId = null;
     let downX = 0;
     let downY = 0;
     let dragStarted = false;
+    let singleClickTimer = null;
+
+    function clearSingleClickTimer() {
+      if (singleClickTimer !== null) {
+        window.clearTimeout(singleClickTimer);
+        singleClickTimer = null;
+      }
+    }
+
+    function smoothScrollTo(top) {
+      try {
+        window.scrollTo({ top, left: 0, behavior: "smooth" });
+      } catch {
+        window.scrollTo(0, top);
+      }
+    }
+
+    function scrollToTop() {
+      smoothScrollTo(0);
+    }
+
+    function scrollToBottom() {
+      const doc = document.documentElement;
+      const bottom = Math.max(doc.scrollHeight - window.innerHeight, 0);
+      smoothScrollTo(bottom);
+    }
 
     indicator.addEventListener("pointerdown", (e) => {
       // left-click / primary touch only
@@ -111,6 +138,7 @@
       if (!dragStarted) {
         if (Math.hypot(dx, dy) < THRESHOLD_PX) return;
         dragStarted = true;
+        clearSingleClickTimer();
         indicator.style.cursor = "grabbing";
         e.preventDefault();
       }
@@ -123,24 +151,30 @@
     const endPointer = async (e) => {
       if (!dragging || pointerId !== e.pointerId) return;
 
+      const didDrag = dragStarted;
       dragging = false;
       pointerId = null;
 
       if (!indicator) return;
+      if (e.type === "pointercancel") return;
 
-      if (dragStarted) {
+      if (didDrag) {
         // Drag finished -> persist position
         indicator.style.cursor = "grab";
         const rect = indicator.getBoundingClientRect();
         await savePosition(rect.left, rect.top);
       } else {
-        // Click (no drag) -> scroll to top smoothly in this tab
-        try {
-          window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-        } catch {
-          // Fallback for very old pages/environments
-          window.scrollTo(0, 0);
+        // Single click -> scroll to top, double click -> scroll to bottom
+        if (singleClickTimer !== null) {
+          clearSingleClickTimer();
+          scrollToBottom();
+          return;
         }
+        singleClickTimer = window.setTimeout(() => {
+          singleClickTimer = null;
+          if (!enabled) return;
+          scrollToTop();
+        }, DOUBLE_CLICK_MS);
       }
     };
 
